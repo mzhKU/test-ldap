@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: test-ldap
+  ldap:
+    urls:
+      - ldap://localhost:8389
+    base: dc=example,dc=com
+    embedded:
+      ldif: classpath:test-server.ldif
+      base-dn: dc=example,dc=com
+      port: 8389
+
+logging:
+  level:
+    org.springframework.security: INFO
+    # org.springframework.security.ldap: DEBUG
+    # org.springframework.ldap: DEBUG
+    com.unboundid: DEBUG
+    # org.springframework.boot.autoconfigure: DEBUG
