@@ -11,9 +11,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,8 +33,10 @@ public class PortfolioController {
     })
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<Portfolio>> getAllPortfolios() {
-        return ResponseEntity.ok(new ArrayList<>(portfolios.values()));
+    public ResponseEntity<List<Portfolio>> getAllPortfolios(Authentication authentication) {
+        String ldapUserName = authentication.getName();
+        var result = portfolios.values().stream().filter(p -> p.getLdapUserName().equals(ldapUserName)).toList();
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "Get portfolio by ID", description = "Retrieve a specific portfolio by its ID")
@@ -45,11 +47,13 @@ public class PortfolioController {
     })
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Portfolio> getPortfolioById(
-            @Parameter(description = "ID of the portfolio to retrieve") @PathVariable Long id) {
+    public ResponseEntity<Portfolio> getPortfolioById(@PathVariable Long id, Authentication auth) {
         Portfolio portfolio = portfolios.get(id);
         if (portfolio == null) {
             return ResponseEntity.notFound().build();
+        }
+        if (!portfolio.getLdapUserName().equals(auth.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return ResponseEntity.ok(portfolio);
     }
@@ -61,10 +65,11 @@ public class PortfolioController {
             @ApiResponse(responseCode = "400", description = "Invalid input")
     })
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Portfolio> createPortfolio(@RequestBody Portfolio portfolio) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Portfolio> createPortfolio(@RequestBody Portfolio portfolio, Authentication auth) {
         Long id = idCounter.getAndIncrement();
         portfolio.setId(id);
+        portfolio.setLdapUserName(auth.getName());
         portfolios.put(id, portfolio);
         return ResponseEntity.status(HttpStatus.CREATED).body(portfolio);
     }

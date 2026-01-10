@@ -37,15 +37,15 @@ public class SecurityConfig {
         System.out.println("Creating LDAP Authentication Provider");
         System.out.println("  Context Source Base: " + contextSource.getBaseLdapPathAsString());
 
-        BindAuthenticator authenticator = new BindAuthenticator(contextSource);
+        BindAuthenticator bindAuthenticator = new BindAuthenticator(contextSource);
         FilterBasedLdapUserSearch userSearch = new FilterBasedLdapUserSearch(
               "ou=people",
               "(uid={0})", // {0} is replaced with the username entered by the user
               contextSource
         );
-        authenticator.setUserSearch(userSearch);
+        bindAuthenticator.setUserSearch(userSearch);
 
-        // Retrieves roles from groups
+        // Retrieves roles from groups and converts group memberships into Spring Security authorities (roles)
         DefaultLdapAuthoritiesPopulator authoritiesPopulator = new DefaultLdapAuthoritiesPopulator(
               contextSource,
               "ou=groups"
@@ -54,7 +54,7 @@ public class SecurityConfig {
         authoritiesPopulator.setRolePrefix("");
 
         // The LdapAuthenticationProvider handles LDAP authentication.
-        return new LdapAuthenticationProvider(authenticator, authoritiesPopulator);
+        return new LdapAuthenticationProvider(bindAuthenticator, authoritiesPopulator);
     }
 
 }

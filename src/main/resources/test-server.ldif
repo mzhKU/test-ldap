@@ -23,15 +23,25 @@ sn: User
 uid: admin
 userPassword: admin123
 
-dn: uid=user,ou=people,dc=example,dc=com
+dn: uid=user1,ou=people,dc=example,dc=com
 objectClass: top
 objectClass: person
 objectClass: organizationalPerson
 objectClass: inetOrgPerson
 cn: Regular User
 sn: User
-uid: user
-userPassword: user123
+uid: user1
+userPassword: user1
+
+dn: uid=user2,ou=people,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Regular User
+sn: User2
+uid: user2
+userPassword: user2
 
 dn: cn=ROLE_ADMIN,ou=groups,dc=example,dc=com
 objectClass: top
@@ -43,5 +53,6 @@ dn: cn=ROLE_USER,ou=groups,dc=example,dc=com
 objectClass: top
 objectClass: groupOfNames
 cn: ROLE_USER
-member: uid=user,ou=people,dc=example,dc=com
+member: uid=user1,ou=people,dc=example,dc=com
+member: uid=user2,ou=people,dc=example,dc=com
 member: uid=admin,ou=people,dc=example,dc=com

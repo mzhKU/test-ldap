@@ -19,13 +19,16 @@ public class Portfolio {
     @Schema(description = "List of positions in this portfolio")
     private List<Position> positions = new ArrayList<>();
 
+    private String ldapUserName;
+
     public Portfolio() {
     }
 
-    public Portfolio(Long id, String name, String description) {
+    public Portfolio(Long id, String name, String description, String ldapUserName) {
         this.id = id;
         this.name = name;
         this.description = description;
+        this.ldapUserName = ldapUserName;
     }
 
     public Long getId() {
@@ -58,5 +61,13 @@ public class Portfolio {
 
     public void setPositions(List<Position> positions) {
         this.positions = positions;
+    }
+
+    public String getLdapUserName() {
+        return this.ldapUserName;
+    }
+
+    public void setLdapUserName(String ldapUserName) {
+        this.ldapUserName = ldapUserName;
     }
 }
