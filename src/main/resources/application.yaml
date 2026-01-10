@@ -13,7 +13,7 @@ spring:
 logging:
   level:
     org.springframework.security: INFO
-    # org.springframework.security.ldap: DEBUG
-    # org.springframework.ldap: DEBUG
+    org.springframework.security.ldap: DEBUG
+    org.springframework.ldap: DEBUG
     com.unboundid: DEBUG
-    # org.springframework.boot.autoconfigure: DEBUG
+    com.unboundid.ldap.listener: DEBUG

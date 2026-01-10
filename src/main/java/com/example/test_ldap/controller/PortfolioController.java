@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,9 +35,20 @@ public class PortfolioController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Portfolio>> getAllPortfolios(Authentication authentication) {
-        String ldapUserName = authentication.getName();
-        var result = portfolios.values().stream().filter(p -> p.getLdapUserName().equals(ldapUserName)).toList();
-        return ResponseEntity.ok(result);
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (isAdmin) {
+            // Admin sees all portfolios
+            return ResponseEntity.ok(new ArrayList<>(portfolios.values()));
+        } else {
+            // Regular users only see their own portfolios
+            String ldapUserName = authentication.getName();
+            var result = portfolios.values().stream()
+                    .filter(p -> p.getLdapUserName().equals(ldapUserName))
+                    .toList();
+            return ResponseEntity.ok(result);
+        }
     }
 
     @Operation(summary = "Get portfolio by ID", description = "Retrieve a specific portfolio by its ID")
@@ -52,9 +64,15 @@ public class PortfolioController {
         if (portfolio == null) {
             return ResponseEntity.notFound().build();
         }
-        if (!portfolio.getLdapUserName().equals(auth.getName())) {
+        
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        // Admin can access any portfolio, regular users only their own
+        if (!isAdmin && !portfolio.getLdapUserName().equals(auth.getName())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+        
         return ResponseEntity.ok(portfolio);
     }
 
