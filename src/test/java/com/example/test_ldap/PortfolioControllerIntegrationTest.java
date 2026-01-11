@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -19,6 +20,7 @@ import static org.hamcrest.Matchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("basic")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class PortfolioControllerIntegrationTest {
 
@@ -33,6 +35,16 @@ public class PortfolioControllerIntegrationTest {
         // Tests run with embedded LDAP server from test-server.ldif
         // Users: admin (ROLE_ADMIN, ROLE_USER), user1 (ROLE_USER), user2 (ROLE_USER)
     }
+
+    // SecurityMockMvcRequestPostProcessor:
+    // Modifies HTTP requests before they're processed by security filter chain, allow to simulate authenticated requests without performing authentication.
+    // '.with(SecurityMockMvcRequestPostProcessors.httpBasic("user1", "user1"))':
+    // This does:
+    // - Encodes credentials          - Converts user1:user1 to Base64
+    // - Adds Authorization header    - Sets Authorization: Basic dXNlcjE6dXNlcjE=
+    // - Triggers real authentication - Spring Security's BasicAuthenticationFilter processes it
+    // - Performs LDAP lookup         - Authenticates against your embedded LDAP server
+    // - Loads authorities            - Retrieves ROLE_USER from LDAP groups
 
     private MvcResult createPortfolio(String username, String password, Portfolio portfolio) throws Exception {
         return mockMvc.perform(post("/api/portfolios")

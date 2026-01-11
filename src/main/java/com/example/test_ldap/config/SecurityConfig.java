@@ -1,7 +1,12 @@
 package com.example.test_ldap.config;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+import static org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED;
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.ldap.core.support.BaseLdapPathContextSource;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -19,14 +24,41 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
+    // Note: The Authentication object is the same regardless of how the user authenticated:
+    // - HTTP Basic Auth: "If the client sends HTTP Basic credentials, authenticate them"
+    //   - Authentication object created from credentials
+    //   - Looks for `Authorization: Basic ...` header in incoming request
+    //   - If found, extracts and decodes credentials and authenticates
+    // - Session-based:
+    //   - Authentication object retrieved from session
+    //   - Session policy is STATELESS → no session created, no JSESSIONID cookie sent back
+    // - Form login → Authentication object created from form submission
+
     @Bean
+    @Profile("basic")
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationProvider authenticationProvider) throws Exception {
         http
-              .authorizeHttpRequests(auth -> auth
-                    .anyRequest().permitAll()
-              )
+              .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
               .authenticationProvider(authenticationProvider)
+              .httpBasic(withDefaults())
+              .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
+              .csrf(csrf -> csrf.disable());
+        return http.build();
+    }
+
+    @Bean
+    @Profile("session")
+    public SecurityFilterChain sessionAuthFilterChain(HttpSecurity http, AuthenticationProvider ldapAuthenticationProvider) throws Exception {
+        http
+              .authenticationProvider(ldapAuthenticationProvider)
+              .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
               .httpBasic(Customizer.withDefaults())
+              .formLogin(Customizer.withDefaults())
+              .logout(logout -> logout
+                    .logoutUrl("/logout")
+                    .logoutSuccessUrl("/login?logout")
+              )
+              .sessionManagement(session -> session.sessionCreationPolicy(IF_REQUIRED))
               .csrf(csrf -> csrf.disable());
         return http.build();
     }

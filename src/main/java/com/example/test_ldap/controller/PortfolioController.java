@@ -35,6 +35,10 @@ public class PortfolioController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Portfolio>> getAllPortfolios(Authentication authentication) {
+
+        // Note: @PreAuthorized("isAuthenticated()") is needed, otherwise authentication
+        //       parameter would be null
+
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         
