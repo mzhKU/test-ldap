@@ -13,6 +13,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
 import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
@@ -36,7 +37,7 @@ public class SecurityConfig {
 
     @Bean
     @Profile("basic")
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationProvider authenticationProvider) throws Exception {
+    public SecurityFilterChain basicSecurityFilterChain(HttpSecurity http, AuthenticationProvider authenticationProvider) throws Exception {
         http
               .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
               .authenticationProvider(authenticationProvider)
@@ -62,6 +63,27 @@ public class SecurityConfig {
               .csrf(csrf -> csrf.disable());
         return http.build();
     }
+
+    @Bean
+    public SecurityFilterChain hybridSecurityFilterChain(
+          HttpSecurity http,
+          AuthenticationProvider ldapAuthenticationProvider) throws Exception {
+        http
+              .authenticationProvider(ldapAuthenticationProvider)  // ← Register provider
+              .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                    .anyRequest().permitAll()
+              )
+              .httpBasic(Customizer.withDefaults())
+              .sessionManagement(session -> session
+                    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)  // Create session after first auth
+                    .maximumSessions(1)
+              )
+              .csrf(csrf -> csrf.disable());
+
+        return http.build();
+    }
+
 
     @Bean
     public AuthenticationProvider ldapAuthenticationProvider(BaseLdapPathContextSource contextSource) {
